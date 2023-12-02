@@ -1,10 +1,29 @@
 import java.util.List;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class IRoadTrip {
 
 
     public IRoadTrip (String [] args) {
         // Replace with your code
+        if (args.length != 3) {
+            System.err.println("ERROR: not all the files were passed");
+        }
+        String borderFile = args[0];
+        String capDistFile = args[1];
+        String stateNameFile = args[2];
+
+        try {
+
+            BufferedReader borders = new BufferedReader(new FileReader(borderFile));
+            BufferedReader capDist = new BufferedReader(new FileReader(capDistFile));
+            BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile));
+
+        } catch(IOException e) {
+            System.err.println("ERROR: cant read these files");
+        }
     }
 
 

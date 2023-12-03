@@ -83,6 +83,27 @@ public class IRoadTrip {
     public void acceptUserInput() {
         // Replace with your code
         Scanner input = new Scanner(System.in);
+        while(true){
+            System.out.println("Enter the name of the first country (type EXIT to quit)");
+            String country1 = input.nextLine();
+            if(country1.equals("EXIT")){
+                break;
+            }
+            System.out.println("Enter the name of the second country (type EXIT to quit)");
+            String country2 = input.nextLine();
+
+            List<String> path = findPath(country1, country2);
+
+            if(path.isEmpty()){
+                System.out.println("There is no path between " + country1 + " and " + country2);
+            } else {
+                System.out.println("Route from " + country1 + " to " + country2 + ":");
+                for(String s : path){
+                    System.out.println("* " + s);
+                }
+            }
+        }
+        input.close();
         System.out.println("IRoadTrip - skeleton");
     }
 

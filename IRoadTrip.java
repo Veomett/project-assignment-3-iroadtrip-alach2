@@ -25,35 +25,35 @@ public class IRoadTrip {
         String stateNameFile = args[2];
 
 
-        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))){
+        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
-            while((line = borders.readLine()) != null){
+            while ((line = borders.readLine()) != null) {
                 String[] part = line.split("=");
                 String country = part[0].trim(); 
                 String[] border = part[1].trim().split(";");
-                for(String b : border){
+                for (String b : border) {
                     countryNamesAndBorders.put(b.trim(), country);
                 }
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println("ERROR: cant read the Border file");
         }
 
-        try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))){   
+        try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
             String line;
-            while((line = stateName.readLine()) != null){
+            while ((line = stateName.readLine()) != null) {
                 String[] columns = line.split("\t");
                 String countryCode = columns[1].trim();
                 String countryName = columns[2].trim();
                 countryCodes.put(countryName,countryCode);
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println("ERROR: cant read the State Name file");
         }
 
-        try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))){   
+        try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
             String line;
-            while((line = capDist.readLine()) != null){
+            while ((line = capDist.readLine()) != null) {
                 String[] part = line.split(",");
                 String countryOne = part[1].trim();
                 String countryTwo = part[3].trim();
@@ -61,7 +61,7 @@ public class IRoadTrip {
                 distances.put(countryOne + "-" + countryTwo, distance);
                 distances.put(countryTwo + "-" + countryOne, distance);
             }
-        } catch(IOException e){
+        } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");
         }
 
@@ -83,10 +83,10 @@ public class IRoadTrip {
     public void acceptUserInput() {
         // Replace with your code
         Scanner input = new Scanner(System.in);
-        while(true){
+        while (true) {
             System.out.println("Enter the name of the first country (type EXIT to quit)");
             String country1 = input.nextLine();
-            if(country1.equals("EXIT")){
+            if (country1.equals("EXIT")) {
                 break;
             }
             System.out.println("Enter the name of the second country (type EXIT to quit)");
@@ -94,19 +94,18 @@ public class IRoadTrip {
 
             List<String> path = findPath(country1, country2);
 
-            if(path.isEmpty()){
+            if (path.isEmpty()) {
                 System.out.println("There is no path between " + country1 + " and " + country2);
             } else {
                 System.out.println("Route from " + country1 + " to " + country2 + ":");
-                for(String s : path){
+                for (String s : path) {
                     System.out.println("* " + s);
                 }
             }
-        }
+        } 
         input.close();
         System.out.println("IRoadTrip - skeleton");
     }
-
 
     public static void main(String[] args) {
         IRoadTrip a3 = new IRoadTrip(args);

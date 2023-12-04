@@ -1,4 +1,7 @@
 import java.util.List;
+
+import static java.lang.Integer.compare;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -51,8 +54,8 @@ public class IRoadTrip {
         distances = new HashMap<>();
 
         createBorderGraph(args[0]);
-        String capDistFile = args[1];
-        String stateNameFile = args[2];
+        setCountryCodes(args[2]);
+        updateDistances(args[1]);
     }
 
     private void createBorderGraph(String borderFile){
@@ -82,7 +85,7 @@ public class IRoadTrip {
         return countryInGraph.get(country);
     }
 
-        //make this into a method that adds each country name and code into a hash map
+    private void setCountryCodes(String stateNameFile){
         try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
             String line;
             while ((line = stateName.readLine()) != null) {
@@ -94,7 +97,9 @@ public class IRoadTrip {
         } catch (IOException e) {
             System.err.println("ERROR: cant read the State Name file");
         }
+    }
 
+    private void updateDistances(String capDistFile){
         //make this into a method that can edit country capital distances 
         try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
             String line;
@@ -103,19 +108,22 @@ public class IRoadTrip {
                 String countryOne = part[1].trim();
                 String countryTwo = part[3].trim();
                 double distance = Double.parseDouble(part[4].trim());
-                distances.put(countryOne + "-" + countryTwo, distance);
-                distances.put(countryTwo + "-" + countryOne, distance);
+            
+                int nodeOne = countryInGraph.get(countryOne);
+                int nodeTwo = countryInGraph.get(countryTwo);
+
+                graph[nodeOne].add(new Edge(nodeOne, nodeTwo, (int) distance));
+                graph[nodeTwo].add(new Edge(nodeTwo, nodeOne, (int) distance));
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");
         }
-
-    
+    }
 
 
     public int getDistance (String country1, String country2) {
-        // Replace with your code
-        return -1;
+        int source = countryInGraph.get(country1);
+        int dest = countryInGraph.get(country2);
     }
 
 
@@ -137,9 +145,10 @@ public class IRoadTrip {
             System.out.println("Enter the name of the second country (type EXIT to quit)");
             String country2 = input.nextLine();
 
+            int dist = getDistance(country1, country2);
             List<String> path = findPath(country1, country2);
 
-            if (path.isEmpty()) {
+            if (dist == -1) {
                 System.out.println("There is no path between " + country1 + " and " + country2);
             } else {
                 System.out.println("Route from " + country1 + " to " + country2 + ":");

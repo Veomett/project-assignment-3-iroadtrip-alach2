@@ -1,14 +1,17 @@
 import java.util.List;
 
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.compare;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 public class IRoadTrip {
     class Edge implements Comparable<Edge>{
@@ -124,15 +127,82 @@ public class IRoadTrip {
     public int getDistance (String country1, String country2) {
         int source = countryInGraph.get(country1);
         int dest = countryInGraph.get(country2);
+
+        int[] shortestDist = new int[graph.length];
+    
+        for(int i = 0; i < graph.length; i++){
+            if(i == source){
+                shortestDist[source] = 0;
+            }
+            shortestDist[i] = MAX_VALUE;
+        }
+        PriorityQueue<Edge> minHeap = new PriorityQueue<>();
+        minHeap.add(new Edge(-1, source, 0));
+
+        while(!minHeap.isEmpty()){
+            Edge currentEdge = minHeap.poll();
+            if(currentEdge.dest == dest){
+                return shortestDist[dest];
+            }
+            for(Edge neighbor : graph[currentEdge.dest]){
+                int newDist = shortestDist[currentEdge.dest] + neighbor.weight;
+                if(newDist < shortestDist[neighbor.dest]){
+                    shortestDist[neighbor.dest] = newDist;
+                    minHeap.add(new Edge(currentEdge.dest, neighbor.dest, newDist));
+                }
+            }
+        }
+        return -1;
     }
 
 
     public List<String> findPath (String country1, String country2) {
-        // Replace with your code
-        return null;
+        int source = countryInGraph.get(country1);
+        int dest = countryInGraph.get(country2);
+
+        int[] shortestDist = new int[graph.length];
+        int[] previous = new int[graph.length];
+        for(int i = 0; i < graph.length; i++){
+            if(i == source){
+                shortestDist[source] = 0;
+            }
+            shortestDist[i] = MAX_VALUE;
+        }
+        PriorityQueue<Edge> minHeap = new PriorityQueue<>();
+        minHeap.add(new Edge(-1, source, 0));
+
+        while(!minHeap.isEmpty()){
+            Edge currentEdge = minHeap.poll();
+
+            for(Edge neighbor : graph[currentEdge.dest]){
+                int newDist = shortestDist[currentEdge.dest] + neighbor.weight;
+                if(newDist < shortestDist[neighbor.dest]){
+                    shortestDist[neighbor.dest] = newDist;
+                    previous[neighbor.dest] = currentEdge.dest;
+                    minHeap.add(new Edge(currentEdge.dest, neighbor.dest, newDist));
+                }
+            }
+        }
+        List<String> path = new ArrayList<>();
+        int curr = dest;
+        while(curr != source){
+            path.add(getCountryName(curr));
+            curr = previous[curr];
+        }
+        path.add(getCountryName(source));
+
+        Collections.reverse(path);
+        return path;
     }
 
-
+    private String getCountryName(int node){
+        for(Map.Entry<String, Integer> entry : countryInGraph.entrySet()){
+            if(entry.getValue() == node){
+                return entry.getKey();
+            }
+        }
+        return "";
+    }
     public void acceptUserInput() {
         // Replace with your code
         Scanner input = new Scanner(System.in);

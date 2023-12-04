@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,8 +36,8 @@ public class IRoadTrip {
         }
     }
     private NodeCost[] nodeCosts;
-    
-    private Map<String, String> countryNamesAndBorders;
+    private List<Edge>[] graph;
+    private Map<String, Integer> countryInGraph;
     private Map<String, String> countryCodes;
     private Map<String, Double> distances;
 
@@ -45,29 +46,43 @@ public class IRoadTrip {
         if (args.length != 3) {
             System.err.println("ERROR: not all the files were passed");
         }
-        countryNamesAndBorders = new HashMap<>();
+
         countryCodes = new HashMap<>();
         distances = new HashMap<>();
 
-        String borderFile = args[0];
+        createBorderGraph(args[0]);
         String capDistFile = args[1];
         String stateNameFile = args[2];
+    }
 
-
+    private void createBorderGraph(String borderFile){
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
             while ((line = borders.readLine()) != null) {
                 String[] part = line.split("=");
                 String country = part[0].trim(); 
                 String[] border = part[1].trim().split(";");
+                int source = addCountryToGraph(country);
                 for (String b : border) {
-                    countryNamesAndBorders.put(b.trim(), country);
+                    int dest = addCountryToGraph(b.trim());
+                    graph[source].add(new Edge(source, dest, 0));
                 }
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Border file");
         }
+    }
 
+    private int addCountryToGraph(String country){
+        if(!countryInGraph.containsKey(country)){
+            int newCountry = countryInGraph.size();
+            countryInGraph.put(country, newCountry);
+            graph[newCountry] = new ArrayList<>();
+        }
+        return countryInGraph.get(country);
+    }
+
+        //make this into a method that adds each country name and code into a hash map
         try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
             String line;
             while ((line = stateName.readLine()) != null) {
@@ -80,6 +95,7 @@ public class IRoadTrip {
             System.err.println("ERROR: cant read the State Name file");
         }
 
+        //make this into a method that can edit country capital distances 
         try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
             String line;
             while ((line = capDist.readLine()) != null) {
@@ -94,7 +110,7 @@ public class IRoadTrip {
             System.err.println("ERROR: cant read the Distance file");
         }
 
-    }
+    
 
 
     public int getDistance (String country1, String country2) {

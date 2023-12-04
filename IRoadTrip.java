@@ -7,6 +7,35 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class IRoadTrip {
+    class Edge implements Comparable<Edge>{
+        int source;
+        int dest;
+        int weight;
+
+        public Edge(int s, int d, int w){
+            source = s;
+            dest = d;
+            weight = w;
+        }
+    }
+    
+    private LinkedList<Edge>[] vertexArr;
+    private int numVertices;
+    private class NodeCost implements Comparable<NodeCost>{
+        int node;
+        int cost;
+
+        NodeCost(int n, int c){
+            node = n;
+            cost = c;
+        };
+
+        public int compareTo(NodeCost n1){
+            return this.cost - n1.cost;
+        }
+    }
+    private NodeCost[] nodeCosts;
+    
     private Map<String, String> countryNamesAndBorders;
     private Map<String, String> countryCodes;
     private Map<String, Double> distances;

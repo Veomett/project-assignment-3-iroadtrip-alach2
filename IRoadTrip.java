@@ -1,15 +1,15 @@
 import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.Integer.compare;
+//import static java.lang.Integer.compare;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Scanner;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 
@@ -26,22 +26,6 @@ public class IRoadTrip {
         }
     }
     
-    private LinkedList<Edge>[] vertexArr;
-    private int numVertices;
-    private class NodeCost implements Comparable<NodeCost>{
-        int node;
-        int cost;
-
-        NodeCost(int n, int c){
-            node = n;
-            cost = c;
-        };
-
-        public int compareTo(NodeCost n1){
-            return this.cost - n1.cost;
-        }
-    }
-    private NodeCost[] nodeCosts;
     private List<Edge>[] graph;
     private Map<String, Integer> countryInGraph;
     private Map<String, String> countryCodes;
@@ -62,20 +46,29 @@ public class IRoadTrip {
     }
 
     private void createBorderGraph(String borderFile){
+        List<String> lines = new ArrayList<>();
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
             while ((line = borders.readLine()) != null) {
-                String[] part = line.split("=");
-                String country = part[0].trim(); 
-                String[] border = part[1].trim().split(";");
-                int source = addCountryToGraph(country);
-                for (String b : border) {
-                    int dest = addCountryToGraph(b.trim());
-                    graph[source].add(new Edge(source, dest, 0));
-                }
+                lines.add(line);
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Border file");
+        }
+        int numCountries = lines.size();
+        graph = new ArrayList[numCountries];
+        for(int i = 0; i < numCountries; i++){
+            graph[i] = new ArrayList<>();
+        }
+        for(String line : lines){
+            String[] part = line.split("=");
+            String country = part[0].trim(); 
+            String[] border = part[1].trim().split(";");
+            int source = addCountryToGraph(country);
+            for (String b : border) {
+                int dest = addCountryToGraph(b.trim());
+                graph[source].add(new Edge(source, dest, 0));
+            }
         }
     }
 

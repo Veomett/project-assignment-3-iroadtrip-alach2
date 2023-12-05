@@ -1,7 +1,6 @@
 import java.util.List;
 
 import static java.lang.Integer.MAX_VALUE;
-//import static java.lang.Integer.compare;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -12,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Collections;
 
 public class IRoadTrip {
     class Edge implements Comparable<Edge>{
@@ -24,59 +24,82 @@ public class IRoadTrip {
             dest = d;
             weight = w;
         }
+        public int compareTo(Edge e){
+            return this.weight - e.weight;
+        }
     }
     
     private List<Edge>[] graph;
     private Map<String, Integer> countryInGraph;
     private Map<String, String> countryCodes;
-    private Map<String, Double> distances;
+    //private Map<String, Double> distances;
 
     public IRoadTrip (String [] args) {
         // Replace with your code
         if (args.length != 3) {
             System.err.println("ERROR: not all the files were passed");
+            System.exit(-1);
         }
 
+        countryInGraph = new HashMap<>();
         countryCodes = new HashMap<>();
-        distances = new HashMap<>();
+        //distances = new HashMap<>();
 
-        createBorderGraph(args[0]);
-        setCountryCodes(args[2]);
-        updateDistances(args[1]);
-    }
-
-    private void createBorderGraph(String borderFile){
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
-            String line;
-            while ((line = borders.readLine()) != null) {
-                lines.add(line);
-            }
-        } catch (IOException e) {
-            System.err.println("ERROR: cant read the Border file");
-        }
-        int numCountries = lines.size();
+        int numCountries = findNumCountries(args[0]);
         graph = new ArrayList[numCountries];
         for(int i = 0; i < numCountries; i++){
             graph[i] = new ArrayList<>();
         }
-        for(String line : lines){
-            String[] part = line.split("=");
-            String country = part[0].trim(); 
-            String[] border = part[1].trim().split(";");
-            int source = addCountryToGraph(country);
-            for (String b : border) {
-                int dest = addCountryToGraph(b.trim());
-                graph[source].add(new Edge(source, dest, 0));
+        
+        setCountryCodes(args[2]);
+        createBorderGraph(args[0]);
+        updateDistances(args[1]);
+    }
+
+    private int findNumCountries(String borderFile){
+        int numCountries = 0;
+        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
+            String line;
+            while ((line = borders.readLine()) != null) {
+                numCountries++;
             }
+        } catch (IOException e) {
+            System.err.println("ERROR: cant read the Border file");
+        }
+        return numCountries;
+    }
+    private void createBorderGraph(String borderFile){
+        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
+            String line;
+            while ((line = borders.readLine()) != null) {
+                String[] part = line.split("=");
+                String country = part[0].trim(); 
+                String[] border = part[1].trim().split(";");
+                int source = addCountryToGraph(country);
+                for (String b : border) {
+                    int dest = addCountryToGraph(b.trim());
+                    graph[source].add(new Edge(source, dest, 0));
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("ERROR: cant read the Border file");
         }
     }
+    
 
     private int addCountryToGraph(String country){
         if(!countryInGraph.containsKey(country)){
             int newCountry = countryInGraph.size();
             countryInGraph.put(country, newCountry);
-            graph[newCountry] = new ArrayList<>();
+
+            String countryCode = countryCodes.get(country);
+
+            if(countryCode != null){
+                graph[newCountry] = new ArrayList<>();
+                int countryCodeNode = countryInGraph.get(countryCode);
+                graph[newCountry].add(new Edge(newCountry, countryCodeNode, 0));
+                graph[countryCodeNode].add(new Edge(countryCodeNode, newCountry, 0));
+            }
         }
         return countryInGraph.get(country);
     }
@@ -95,8 +118,7 @@ public class IRoadTrip {
         }
     }
 
-    private void updateDistances(String capDistFile){
-        //make this into a method that can edit country capital distances 
+    private void updateDistances(String capDistFile){ 
         try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
             String line;
             while ((line = capDist.readLine()) != null) {
@@ -105,11 +127,15 @@ public class IRoadTrip {
                 String countryTwo = part[3].trim();
                 double distance = Double.parseDouble(part[4].trim());
             
-                int nodeOne = countryInGraph.get(countryOne);
-                int nodeTwo = countryInGraph.get(countryTwo);
+                String codeOne = countryCodes.get(countryOne);
+                String codeTwo = countryCodes.get(countryTwo);
 
-                graph[nodeOne].add(new Edge(nodeOne, nodeTwo, (int) distance));
-                graph[nodeTwo].add(new Edge(nodeTwo, nodeOne, (int) distance));
+                if(codeOne != null && codeTwo != null){
+                    int nodeOne = countryInGraph.get(codeOne);
+                    int nodeTwo = countryInGraph.get(codeTwo);
+                    graph[nodeOne].add(new Edge(nodeOne, nodeTwo, (int) distance));
+                    graph[nodeTwo].add(new Edge(nodeTwo, nodeOne, (int) distance));
+                }
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");

@@ -32,7 +32,6 @@ public class IRoadTrip {
     private List<Edge>[] graph;
     private Map<String, Integer> countryInGraph;
     private Map<String, String> countryCodes;
-    //private Map<String, Double> distances;
 
     public IRoadTrip (String [] args) {
         // Replace with your code
@@ -43,30 +42,17 @@ public class IRoadTrip {
 
         countryInGraph = new HashMap<>();
         countryCodes = new HashMap<>();
-        //distances = new HashMap<>();
+        
 
-        int numCountries = findNumCountries(args[0]);
+        int numCountries = countryInGraph.size();
         graph = new ArrayList[numCountries];
         for(int i = 0; i < numCountries; i++){
             graph[i] = new ArrayList<>();
         }
-        
-        setCountryCodes(args[2]);
-        createBorderGraph(args[0]);
-        updateDistances(args[1]);
-    }
 
-    private int findNumCountries(String borderFile){
-        int numCountries = 0;
-        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
-            String line;
-            while ((line = borders.readLine()) != null) {
-                numCountries++;
-            }
-        } catch (IOException e) {
-            System.err.println("ERROR: cant read the Border file");
-        }
-        return numCountries;
+        createBorderGraph(args[0]);
+        setCountryCodes(args[2]);
+        updateDistances(args[1]);
     }
     private void createBorderGraph(String borderFile){
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
@@ -76,6 +62,7 @@ public class IRoadTrip {
                 String country = part[0].trim(); 
                 String[] border = part[1].trim().split(";");
                 int source = addCountryToGraph(country);
+               
                 for (String b : border) {
                     int dest = addCountryToGraph(b.trim());
                     graph[source].add(new Edge(source, dest, 0));
@@ -92,16 +79,16 @@ public class IRoadTrip {
             int newCountry = countryInGraph.size();
             countryInGraph.put(country, newCountry);
 
-            String countryCode = countryCodes.get(country);
-
-            if(countryCode != null){
-                graph[newCountry] = new ArrayList<>();
-                int countryCodeNode = countryInGraph.get(countryCode);
-                graph[newCountry].add(new Edge(newCountry, countryCodeNode, 0));
-                graph[countryCodeNode].add(new Edge(countryCodeNode, newCountry, 0));
-            }
+           
+                int countryCodeNode = countryInGraph.getOrDefault(country, -1);
+                if(countryCodeNode != -1){
+                    graph[newCountry] = new ArrayList<>();
+                    graph[newCountry].add(new Edge(newCountry, countryCodeNode, 0));
+                    graph[countryCodeNode].add(new Edge(countryCodeNode, newCountry, 0));
+                }
         }
-        return countryInGraph.get(country);
+        
+        return countryInGraph.getOrDefault(country,-1);
     }
 
     private void setCountryCodes(String stateNameFile){
@@ -120,6 +107,7 @@ public class IRoadTrip {
 
     private void updateDistances(String capDistFile){ 
         try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
+            capDist.readLine();
             String line;
             while ((line = capDist.readLine()) != null) {
                 String[] part = line.split(",");

@@ -194,6 +194,12 @@ public class IRoadTrip {
             case "Vietnam, Democratic Republic of":
                 return "Vietnam";
 
+            case "Korea, People's Republic of":
+                return "Korea, South";
+
+            case "Korea, Republic of":
+                return "Korea, North";
+
             default:
                 return input;
         }

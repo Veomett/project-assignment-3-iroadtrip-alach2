@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Collections;
 
 public class IRoadTrip {
@@ -122,7 +123,9 @@ public class IRoadTrip {
                         System.out.println("Country not found  " + borderOne.trim());
                     }
                     addEdge(source, dest, 0);
-                    countriesWithLandBorders.add(country);
+                    if (!countriesWithLandBorders.contains(country)) {
+                        countriesWithLandBorders.add(country);
+                    }
                     }
                 }
             }
@@ -151,21 +154,9 @@ public class IRoadTrip {
 
             case "Surinam":
                 return "Suriname";
-
-            case "Germany (Prussia)":
-                return "Germany";
             
             case "German Federal Republic":
                 return "Germany";
-
-            case "German Democratic Republic":
-                return "Germany";
-
-            case "Austria-Hungary":
-                return "Austria";
-
-            case "Czechoslovakia":
-                return "Czechia";
 
             case "Czech Republic":
                 return "Czechia";
@@ -174,9 +165,6 @@ public class IRoadTrip {
                 return "Italy";
 
             case "Macedonia (Former Yugoslav Republic of)":
-                return "North Macedonia";
-
-            case "Yugoslavia":
                 return "North Macedonia";
 
             case "Bosnia-Herzegovina":
@@ -191,6 +179,12 @@ public class IRoadTrip {
             case "Belarus (Byelorussia)":
                 return "Belarus";
 
+            case "Yemen (Arab Republic of Yemen)":
+                return "Yemen";
+
+            case "Vietnam, Democratic Republic of":
+                return "Vietnam";
+
             default:
                 return input;
         }
@@ -198,28 +192,26 @@ public class IRoadTrip {
 
     private void setCountryCodes(String stateNameFile){
     
-        try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
+        try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {  
             stateName.readLine();
             String line;
             while ((line = stateName.readLine()) != null) {
                 String[] columns = line.split("\t");
                 String countryCode = columns[1].trim();
                 String countryName = columns[2].trim();
+            
 
                 countryName = standardCountryName(countryName);
                 if(countryInGraph.containsKey(countryName)){
-                countryCodes.put(countryCode, countryName);
-                
-                //System.out.println("THE CODE IS " + countryCode);
-                //System.out.println("THE NAME IS " + countryName);
+                    countryCodes.put(countryCode, countryName);
                 }
+                 
             
         }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the State Name file");
         }
     }
-
     private void updateDistances(String capDistFile){ 
         try (BufferedReader capDist = new BufferedReader(new FileReader(capDistFile))) {   
             capDist.readLine();
@@ -290,49 +282,55 @@ public class IRoadTrip {
             }
         }
         if(shortestDist[dest] == MAX_VALUE){
-        return -1;
+            return 0;
         } else{
+            System.out.println(shortestDist[dest]);
             return shortestDist[dest];
         }
     }
 
 
     public List<String> findPath (String country1, String country2) {
-        int source = countryInGraph.get(country1);
-        int dest = countryInGraph.get(country2);
+    int source = countryInGraph.get(country1);
+    int dest = countryInGraph.get(country2);
 
-        int[] shortestDist = new int[numVertices];
-        int[] previous = new int[numVertices];
-        for(int i = 0; i < numVertices; i++){
-            if(i == source){
-                shortestDist[source] = 0;
-            }
-            shortestDist[i] = MAX_VALUE;
-        }
-        PriorityQueue<NodeCost> minHeap = new PriorityQueue<>();
-        minHeap.add(new NodeCost(source, 0));
+    boolean[] visited = new boolean[numVertices];
+    int[] previous = new int[numVertices];
 
-        while(!minHeap.isEmpty()){
-            NodeCost current = minHeap.poll();
-            int currVertex = current.node;
+    Queue<Integer> queue = new LinkedList<>();
+    queue.add(source);
+    visited[source] = true;
 
-            if(currVertex == dest){
-                break;
-            }
-            for(Edge neighbor : vertexArr[currVertex]){
-                int newDist = shortestDist[currVertex] + neighbor.weight;
-                if(newDist < shortestDist[neighbor.dest]){
-                    shortestDist[neighbor.dest] = newDist;
-                    previous[neighbor.dest] = currVertex;
-                    minHeap.add(new NodeCost(neighbor.dest, newDist));
+    while (!queue.isEmpty()) {
+        int current = queue.poll();
+
+        for (Edge neighbor : vertexArr[current]) {
+            System.out.println(vertexArr[current]);
+            int neighborNode = neighbor.dest;
+
+            if (!visited[neighborNode]) {
+                visited[neighborNode] = true;
+                previous[neighborNode] = current;
+                queue.add(neighborNode);
+
+                if (neighborNode == dest) {
+                    queue.clear();
+                    break;
                 }
             }
         }
+    }
+
+    
+    if (!visited[dest]) {
+        System.out.println("No path exists between " + country1 + " and " + country2);
+        return Collections.emptyList();  
+    }
         List<String> path = new ArrayList<>();
         int curr = dest;
         while (curr != source) {
             int weight = getEdgeWeight(curr, previous[curr]);
-            path.add(getCountryName(curr) + " --> " + getCountryName(previous[curr]) + " (" + weight + " km.)");
+            path.add(getCountryName(previous[curr]) + " --> " + getCountryName(curr) + " (" + weight + " km.)");
             curr = previous[curr];
         }
     path.add(getCountryName(source));
@@ -379,11 +377,11 @@ private int getEdgeWeight(int src, int dest) {
             }
 
             int dist = getDistance(country1, country2);
-            List<String> path = findPath(country1, country2);
-
             if (dist == -1) {
                 System.out.println("There is no path between " + country1 + " and " + country2);
             } else {
+                System.out.println(dist);
+                List<String> path = findPath(country1, country2);
                 System.out.println("Route from " + country1 + " to " + country2 + ":");
                 for (String s : path) {
                     System.out.println("* " + s);

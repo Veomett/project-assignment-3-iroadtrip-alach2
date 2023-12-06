@@ -316,6 +316,9 @@ public class IRoadTrip {
             NodeCost current = minHeap.poll();
             int currVertex = current.node;
 
+            if(currVertex == dest){
+                break;
+            }
             for(Edge neighbor : vertexArr[currVertex]){
                 int newDist = shortestDist[currVertex] + neighbor.weight;
                 if(newDist < shortestDist[neighbor.dest]){

@@ -268,41 +268,10 @@ public class IRoadTrip {
     public int getDistance (String country1, String country2) {
         int source = countryInGraph.get(country1);
         int dest = countryInGraph.get(country2);
-        if (!countriesWithLandBorders.contains(country1) || !countriesWithLandBorders.contains(country2)) {
+        if (!countriesWithLandBorders.contains(country1) || !countriesWithLandBorders.contains(country2)) { //If the countries do not border each other return -1
             return -1;
         } 
- 
-        int[] shortestDist = new int[numVertices];
-        int[] previous = new int[numVertices];
-        for(int i = 0; i < numVertices; i++){
-            if(i == source){
-                shortestDist[source] = 0;
-            }
-            shortestDist[i] = MAX_VALUE;
-        }
-        PriorityQueue<NodeCost> minHeap = new PriorityQueue<>();
-        minHeap.add(new NodeCost(source, 0));
-
-        while(!minHeap.isEmpty()){
-            NodeCost current = minHeap.poll();
-            int currVertex = current.node;
-            if(currVertex == dest){
-                return shortestDist[dest];
-            }
-            for(Edge neighbor : vertexArr[currVertex]){
-                int newDist = shortestDist[currVertex] + neighbor.weight;
-                if(newDist < shortestDist[neighbor.dest]){
-                    shortestDist[neighbor.dest] = newDist;
-                    previous[neighbor.dest] = currVertex;
-                    minHeap.add(new NodeCost(neighbor.dest, newDist));
-                }
-            }
-        }
-        if(shortestDist[dest] == MAX_VALUE){
-            return 0;
-        } else{
-            return shortestDist[dest];
-        }
+        return getEdgeWeight(source, dest);
     }
 
     //Method that finds the shortest path using bfs
@@ -333,7 +302,6 @@ public class IRoadTrip {
             }
         }
         if (!visited[dest]) {
-            System.out.println("No path exists between " + country1 + " and " + country2);
             return Collections.emptyList(); //Returns an empty list if no path exisits between two countries
         }
         List<String> path = new ArrayList<>();
@@ -389,17 +357,15 @@ public class IRoadTrip {
             }
 
             int dist = getDistance(country1, country2);
-            if (dist == -1) {
+            System.out.println(dist);
+            List<String> path = findPath(country1, country2);
+            if(path.isEmpty()){
                 System.out.println("There is no path between " + country1 + " and " + country2);
-            } else {
-                List<String> path = findPath(country1, country2);
-                if(path.isEmpty()){
-                    continue;
-                }
-                System.out.println("Route from " + country1 + " to " + country2 + ":");
-                for (String s : path) {
-                    System.out.println("* " + s);
-                }
+                continue;
+            }
+            System.out.println("Route from " + country1 + " to " + country2 + ":");
+            for (String s : path) {
+                System.out.println("* " + s);
             }
         } 
         input.close();

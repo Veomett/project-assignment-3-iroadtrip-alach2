@@ -154,13 +154,43 @@ public class IRoadTrip {
             case "German Democratic Republic":
                 return "Germany";
 
+            case "Austria-Hungary":
+                return "Austria";
+
+            case "Czechoslovakia":
+                return "Czechia";
+
+            case "Czech Republic":
+                return "Czechia";
+
+            case "Italy/Sardinia":
+                return "Italy";
+
+            case "Macedonia (Former Yugoslav Republic of)":
+                return "North Macedonia";
+
+            case "Yugoslavia":
+                return "North Macedonia";
+
+            case "Bosnia-Herzegovina":
+                return "Bosnia and Herzegovina";
+
+            case "Rumania":
+                return "Romania";
+
+            case "Russia (Soviet Union)":
+                return "Russia";
+
+            case "Belarus (Byelorussia)":
+                return "Belarus";
+
             default:
                 return input;
         }
     }
 
     private void setCountryCodes(String stateNameFile){
-        
+    
         try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
             stateName.readLine();
             String line;
@@ -170,10 +200,14 @@ public class IRoadTrip {
                 String countryName = columns[2].trim();
 
                 countryName = standardCountryName(countryName);
+                if(countryInGraph.containsKey(countryName)){
                 countryCodes.put(countryCode, countryName);
-                System.out.println("THE NAME IS " + countryName);  
-                System.out.println("THE CODE IS " + countryCode);  
-            }
+            
+                System.out.println("THE CODE IS " + countryCode);
+                System.out.println("THE NAME IS " + countryName);
+                }
+            
+        }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the State Name file");
         }

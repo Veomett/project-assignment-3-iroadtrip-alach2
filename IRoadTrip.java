@@ -49,6 +49,7 @@ public class IRoadTrip {
 
     private Map<String, String> countryCodes;
     private Map<String, Integer> countryInGraph;
+    private List<String> countriesWithLandBorders;
 
     public IRoadTrip (String [] args) {
         // Replace with your code
@@ -98,6 +99,7 @@ public class IRoadTrip {
     }
    
     private void createBorderGraph(String borderFile){
+        countriesWithLandBorders = new ArrayList<>();
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
             while ((line = borders.readLine()) != null) {
@@ -105,7 +107,7 @@ public class IRoadTrip {
                 String country = part[0].trim(); 
                 
                 int source = addCountry(country);
-                System.out.println(country);
+                System.out.println(country + " at index " + source);
                 if(source == -1){
                     System.out.println("Country not found  " + country);
                 }
@@ -115,11 +117,12 @@ public class IRoadTrip {
                         String[] borderName = b.trim().split("\\s+(?=[0-9])", 2);
                         String borderOne = borderName[0].trim();
                         int dest = addCountry(borderOne);
-                        System.out.println("BORDER: " + borderOne);
+                        System.out.println("BORDER: " + borderOne + " at index " + dest);
                         if(dest == -1){
                         System.out.println("Country not found  " + borderOne.trim());
                     }
                     addEdge(source, dest, 0);
+                    countriesWithLandBorders.add(country);
                     }
                 }
             }
@@ -130,8 +133,12 @@ public class IRoadTrip {
 
     public int addCountry(String country){
             int index = countryInGraph.size();
+            if(!countryInGraph.containsKey(country)){
             countryInGraph.put(country, index);
             return index;
+            }else{
+                return countryInGraph.get(country);
+            }
     }
 
     private String standardCountryName(String input){
@@ -202,9 +209,9 @@ public class IRoadTrip {
                 countryName = standardCountryName(countryName);
                 if(countryInGraph.containsKey(countryName)){
                 countryCodes.put(countryCode, countryName);
-            
-                System.out.println("THE CODE IS " + countryCode);
-                System.out.println("THE NAME IS " + countryName);
+                
+                //System.out.println("THE CODE IS " + countryCode);
+                //System.out.println("THE NAME IS " + countryName);
                 }
             
         }
@@ -225,20 +232,27 @@ public class IRoadTrip {
                 countryOneInitial = countryCodes.get(countryOneInitial);
                 countryTwoInitial = countryCodes.get(countryTwoInitial);
                 if(countryOneInitial != null && countryTwoInitial != null){
-
-                System.out.println("THE COUNTRIES ARE " + countryOneInitial + " " + countryTwoInitial);
-                double distance = Double.parseDouble(part[4].trim());
-             
+                    int distance = Integer.parseInt(part[4].trim());
+                    
                     int nodeOne = countryInGraph.get((countryOneInitial));
                     int nodeTwo = countryInGraph.get((countryTwoInitial));
-                    addEdge(nodeOne, nodeTwo, (int) distance);
-                    addEdge(nodeTwo, nodeOne, (int) distance);
-                }else{
-                    System.out.println("Country code is not found in countryCodes");
-                }
+                    if (countriesWithLandBorders.contains(countryOneInitial) && countriesWithLandBorders.contains(countryTwoInitial)) {
+                    updateEdgeWeight(nodeOne, nodeTwo, distance);
+                    updateEdgeWeight(nodeTwo, nodeOne, distance);
+                    }
+                }   
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");
+        }
+    }
+
+    private void updateEdgeWeight(int src, int dst, int newWeight){
+        for(Edge e : vertexArr[src]){
+            if(e.dest == dst && e.source == src){
+                e.weight = newWeight;
+                break;
+            }
         }
     }
 
@@ -246,9 +260,11 @@ public class IRoadTrip {
     public int getDistance (String country1, String country2) {
         int source = countryInGraph.get(country1);
         int dest = countryInGraph.get(country2);
-
+        if (!countriesWithLandBorders.contains(country1) || !countriesWithLandBorders.contains(country2)) {
+            return -1;
+        }
         int[] shortestDist = new int[numVertices];
-    
+        int[] previous = new int[numVertices];
         for(int i = 0; i < numVertices; i++){
             if(i == source){
                 shortestDist[source] = 0;
@@ -268,11 +284,16 @@ public class IRoadTrip {
                 int newDist = shortestDist[currVertex] + neighbor.weight;
                 if(newDist < shortestDist[neighbor.dest]){
                     shortestDist[neighbor.dest] = newDist;
+                    previous[neighbor.dest] = currVertex;
                     minHeap.add(new NodeCost(neighbor.dest, newDist));
                 }
             }
         }
+        if(shortestDist[dest] == MAX_VALUE){
         return -1;
+        } else{
+            return shortestDist[dest];
+        }
     }
 
 
@@ -306,15 +327,24 @@ public class IRoadTrip {
         }
         List<String> path = new ArrayList<>();
         int curr = dest;
-        while(curr != source){
-            path.add(getCountryName(curr));
+        while (curr != source) {
+            int weight = getEdgeWeight(curr, previous[curr]);
+            path.add(getCountryName(curr) + " --> " + getCountryName(previous[curr]) + " (" + weight + " km.)");
             curr = previous[curr];
         }
-        path.add(getCountryName(source));
+    path.add(getCountryName(source));
 
-        Collections.reverse(path);
-        return path;
+    Collections.reverse(path);
+    return path;
+}
+private int getEdgeWeight(int src, int dest) {
+    for (Edge edge : vertexArr[src]) {
+        if (edge.dest == dest) {
+            return edge.weight;
+        }
     }
+    return -1;
+}
 
     private String getCountryName(int node){
         for(Map.Entry<String, Integer> entry : countryInGraph.entrySet()){
@@ -332,7 +362,7 @@ public class IRoadTrip {
             String country1 = input.nextLine();
             if (country1.equals("EXIT")) {
                 break;
-            } else if (countryInGraph.get(country1) == null){
+            } else if (!countryInGraph.containsKey(country1)){
                 System.out.println("This is an invaild country, choose again:");
                 continue;
             }
@@ -340,7 +370,7 @@ public class IRoadTrip {
             String country2 = input.nextLine();
             if (country2.equals("EXIT")) {
                 break;
-            }else if (countryInGraph.get(country2) == null){
+            }else if (!countryInGraph.containsKey(country2)){
                 System.out.println("This is an invaild country, choose again:");
                 continue;
             }

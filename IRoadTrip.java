@@ -284,7 +284,7 @@ public class IRoadTrip {
                 return shortestDist[dest];
             }
             for(Edge neighbor : vertexArr[currVertex]){
-                int newDist = shortestDist[currVertex] + getEdgeWeight(neighbor.source, neighbor.dest);
+                int newDist = shortestDist[currVertex] + neighbor.weight;
                 if(newDist < shortestDist[neighbor.dest]){
                     shortestDist[neighbor.dest] = newDist;
                     previous[neighbor.dest] = currVertex;
@@ -365,7 +365,7 @@ public class IRoadTrip {
         Scanner input = new Scanner(System.in);
         while (true) {
             System.out.println("Enter the name of the first country (type EXIT to quit)");
-            String country1 = input.nextLine();
+            String country1 = input.nextLine().trim();
             if (country1.equals("EXIT")) {
                 break;
             } else if (!countryInGraph.containsKey(country1)){ //Checks for validity of input, if it is a country or not
@@ -374,7 +374,7 @@ public class IRoadTrip {
             }
 
             System.out.println("Enter the name of the second country (type EXIT to quit)");
-            String country2 = input.nextLine();
+            String country2 = input.nextLine().trim();
             if (country2.equals("EXIT")) {
                 break;
             }else if (!countryInGraph.containsKey(country2)){ 
@@ -386,8 +386,10 @@ public class IRoadTrip {
             if (dist == -1) {
                 System.out.println("There is no path between " + country1 + " and " + country2);
             } else {
-                System.out.println(dist);
                 List<String> path = findPath(country1, country2);
+                if(path.isEmpty()){
+                    continue;
+                }
                 System.out.println("Route from " + country1 + " to " + country2 + ":");
                 for (String s : path) {
                     System.out.println("* " + s);
@@ -403,4 +405,3 @@ public class IRoadTrip {
         a3.acceptUserInput();
     }
 }
-

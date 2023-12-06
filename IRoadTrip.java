@@ -28,10 +28,57 @@ public class IRoadTrip {
             return this.weight - e.weight;
         }
     }
-    
-    private List<Edge>[] graph;
-    private Map<String, Integer> countryInGraph;
+    private LinkedList<Edge>[] vertexArr;
+    private int numVertices;
+    // This is used for Dijkstra's algorithm
+    private class NodeCost implements Comparable<NodeCost>{
+        int node;
+        int cost;
+        NodeCost(int n, int c){
+            node=n;
+            cost=c;
+        };
+        @Override
+        public int compareTo(NodeCost nc1)
+        {
+            return this.cost - nc1.cost;
+        }
+    }
+
+    private NodeCost[] nodeCosts;
+
+    /*class Graph{
+        private List<Edge>[] graph;
+        private Map<String, Integer> countryInGraph;
+
+        public Graph(int numCountries){
+            graph = new ArrayList[numCountries];
+            for (int i = 0; i < numCountries; i++) {
+                graph[i] = new ArrayList<>();
+            }
+            countryInGraph = new HashMap<>();
+        }
+
+        public void addEdge(int source, int dest, int weight){
+            graph[source].add(new Edge(source, dest, weight));
+            graph[dest].add(new Edge(dest, source, weight));
+        }
+
+        public int addCountry(String country){
+            int index = countryInGraph.size();
+            countryInGraph.put(country, index);
+            return index;
+        }
+
+        public List<Edge>[] getGraph(){
+            return graph;
+        }
+    */
+
+    //private Graph graph;
+
     private Map<String, String> countryCodes;
+    private Map<String, Integer> countryInGraph;
 
     public IRoadTrip (String [] args) {
         // Replace with your code
@@ -39,56 +86,78 @@ public class IRoadTrip {
             System.err.println("ERROR: not all the files were passed");
             System.exit(-1);
         }
-
+        numVertices = getNumCountries(args[0]);
+        vertexArr = new LinkedList[getNumCountries(args[0])];
+        nodeCosts = new NodeCost[numVertices];
         countryInGraph = new HashMap<>();
-        countryCodes = new HashMap<>();
-        
-
-        int numCountries = countryInGraph.size();
-        graph = new ArrayList[numCountries];
-        for(int i = 0; i < numCountries; i++){
-            graph[i] = new ArrayList<>();
+        for (int i = 0; i < numVertices; i++){
+            vertexArr[i] = new LinkedList<>();
+            nodeCosts[i] = new NodeCost(i, MAX_VALUE);
         }
 
+        countryCodes = new HashMap<>();
+        
+        //int numCountries = getNumCountries(args[0]);
+        //graph = new Graph(numCountries);
+        
         createBorderGraph(args[0]);
         setCountryCodes(args[2]);
         updateDistances(args[1]);
     }
+    public void addEdge(int v1, int v2, int weight){
+        Edge v1Edge = new Edge(v1, v2, weight);
+        vertexArr[v1].add(v1Edge);
+        Edge v2Edge = new Edge(v2, v1, weight);
+        vertexArr[v2].add(v2Edge);
+    }
+
+    private int getNumCountries(String borderFile) {
+        int count = 0;
+        try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
+            String line;
+            while ((line = borders.readLine()) != null) {
+                line.split("=");
+                count++;
+
+            }
+        } catch (IOException e) {
+            System.err.println("ERROR: can't read the Border file");
+        }
+        return count;
+    }
+   
     private void createBorderGraph(String borderFile){
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
             while ((line = borders.readLine()) != null) {
                 String[] part = line.split("=");
                 String country = part[0].trim(); 
-                String[] border = part[1].trim().split(";");
-                int source = addCountryToGraph(country);
-               
-                for (String b : border) {
-                    int dest = addCountryToGraph(b.trim());
-                    graph[source].add(new Edge(source, dest, 0));
+                System.out.println(country);
+        
+                int source = addCountry(country);
+                if(source == -1){
+                    System.out.println("Country not found  " + country);
                 }
+                if(part.length > 1){
+                    String[] border = part[1].trim().split(";");
+                for (String b : border) {
+                    int dest = addCountry(b.trim());
+                    if(dest == -1){
+                    System.out.println("Country not found  " + b.trim());
+                }
+                    addEdge(source, dest, 0);
+                }
+            }
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Border file");
         }
     }
-    
 
-    private int addCountryToGraph(String country){
-        if(!countryInGraph.containsKey(country)){
-            int newCountry = countryInGraph.size();
-            countryInGraph.put(country, newCountry);
-
-           
-                int countryCodeNode = countryInGraph.getOrDefault(country, -1);
-                if(countryCodeNode != -1){
-                    graph[newCountry] = new ArrayList<>();
-                    graph[newCountry].add(new Edge(newCountry, countryCodeNode, 0));
-                    graph[countryCodeNode].add(new Edge(countryCodeNode, newCountry, 0));
-                }
-        }
-        
-        return countryInGraph.getOrDefault(country,-1);
+    public int addCountry(String country){
+            int index = countryInGraph.size();
+            countryInGraph.put(country, index);
+            return index;
     }
 
     private void setCountryCodes(String stateNameFile){
@@ -114,16 +183,12 @@ public class IRoadTrip {
                 String countryOne = part[1].trim();
                 String countryTwo = part[3].trim();
                 double distance = Double.parseDouble(part[4].trim());
-            
-                String codeOne = countryCodes.get(countryOne);
-                String codeTwo = countryCodes.get(countryTwo);
 
-                if(codeOne != null && codeTwo != null){
-                    int nodeOne = countryInGraph.get(codeOne);
-                    int nodeTwo = countryInGraph.get(codeTwo);
-                    graph[nodeOne].add(new Edge(nodeOne, nodeTwo, (int) distance));
-                    graph[nodeTwo].add(new Edge(nodeTwo, nodeOne, (int) distance));
-                }
+                    int nodeOne = countryInGraph.get(countryOne);
+                    int nodeTwo = countryInGraph.get(countryTwo);
+                    addEdge(nodeOne, nodeTwo, (int) distance);
+                    addEdge(nodeTwo, nodeOne, (int) distance);
+                
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");
@@ -135,27 +200,29 @@ public class IRoadTrip {
         int source = countryInGraph.get(country1);
         int dest = countryInGraph.get(country2);
 
-        int[] shortestDist = new int[graph.length];
+        int[] shortestDist = new int[numVertices];
     
-        for(int i = 0; i < graph.length; i++){
+        for(int i = 0; i < numVertices; i++){
             if(i == source){
                 shortestDist[source] = 0;
             }
             shortestDist[i] = MAX_VALUE;
         }
-        PriorityQueue<Edge> minHeap = new PriorityQueue<>();
-        minHeap.add(new Edge(-1, source, 0));
+        PriorityQueue<NodeCost> minHeap = new PriorityQueue<>();
+        minHeap.add(new NodeCost(source, 0));
 
         while(!minHeap.isEmpty()){
-            Edge currentEdge = minHeap.poll();
-            if(currentEdge.dest == dest){
+            NodeCost current = minHeap.poll();
+            int currVertex = current.node;
+            int currCost = current.cost;
+            if(currVertex == dest){
                 return shortestDist[dest];
             }
-            for(Edge neighbor : graph[currentEdge.dest]){
-                int newDist = shortestDist[currentEdge.dest] + neighbor.weight;
+            for(Edge neighbor : vertexArr[currVertex]){
+                int newDist = shortestDist[currVertex] + neighbor.weight;
                 if(newDist < shortestDist[neighbor.dest]){
                     shortestDist[neighbor.dest] = newDist;
-                    minHeap.add(new Edge(currentEdge.dest, neighbor.dest, newDist));
+                    minHeap.add(new NodeCost(neighbor.dest, newDist));
                 }
             }
         }
@@ -167,26 +234,27 @@ public class IRoadTrip {
         int source = countryInGraph.get(country1);
         int dest = countryInGraph.get(country2);
 
-        int[] shortestDist = new int[graph.length];
-        int[] previous = new int[graph.length];
-        for(int i = 0; i < graph.length; i++){
+        int[] shortestDist = new int[numVertices];
+        int[] previous = new int[numVertices];
+        for(int i = 0; i < numVertices; i++){
             if(i == source){
                 shortestDist[source] = 0;
             }
             shortestDist[i] = MAX_VALUE;
         }
-        PriorityQueue<Edge> minHeap = new PriorityQueue<>();
-        minHeap.add(new Edge(-1, source, 0));
+        PriorityQueue<NodeCost> minHeap = new PriorityQueue<>();
+        minHeap.add(new NodeCost(source, 0));
 
         while(!minHeap.isEmpty()){
-            Edge currentEdge = minHeap.poll();
+            NodeCost current = minHeap.poll();
+            int currVertex = current.node;
 
-            for(Edge neighbor : graph[currentEdge.dest]){
-                int newDist = shortestDist[currentEdge.dest] + neighbor.weight;
+            for(Edge neighbor : vertexArr[currVertex]){
+                int newDist = shortestDist[currVertex] + neighbor.weight;
                 if(newDist < shortestDist[neighbor.dest]){
                     shortestDist[neighbor.dest] = newDist;
-                    previous[neighbor.dest] = currentEdge.dest;
-                    minHeap.add(new Edge(currentEdge.dest, neighbor.dest, newDist));
+                    previous[neighbor.dest] = currVertex;
+                    minHeap.add(new NodeCost(neighbor.dest, newDist));
                 }
             }
         }
@@ -218,9 +286,18 @@ public class IRoadTrip {
             String country1 = input.nextLine();
             if (country1.equals("EXIT")) {
                 break;
+            } else if (countryInGraph.get(country1) == null){
+                System.out.println("This is an invaild country, choose again:");
+                continue;
             }
             System.out.println("Enter the name of the second country (type EXIT to quit)");
             String country2 = input.nextLine();
+            if (country2.equals("EXIT")) {
+                break;
+            }else if (countryInGraph.get(country2) == null){
+                System.out.println("This is an invaild country, choose again:");
+                continue;
+            }
 
             int dist = getDistance(country1, country2);
             List<String> path = findPath(country1, country2);

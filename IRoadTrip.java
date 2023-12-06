@@ -47,36 +47,6 @@ public class IRoadTrip {
 
     private NodeCost[] nodeCosts;
 
-    /*class Graph{
-        private List<Edge>[] graph;
-        private Map<String, Integer> countryInGraph;
-
-        public Graph(int numCountries){
-            graph = new ArrayList[numCountries];
-            for (int i = 0; i < numCountries; i++) {
-                graph[i] = new ArrayList<>();
-            }
-            countryInGraph = new HashMap<>();
-        }
-
-        public void addEdge(int source, int dest, int weight){
-            graph[source].add(new Edge(source, dest, weight));
-            graph[dest].add(new Edge(dest, source, weight));
-        }
-
-        public int addCountry(String country){
-            int index = countryInGraph.size();
-            countryInGraph.put(country, index);
-            return index;
-        }
-
-        public List<Edge>[] getGraph(){
-            return graph;
-        }
-    */
-
-    //private Graph graph;
-
     private Map<String, String> countryCodes;
     private Map<String, Integer> countryInGraph;
 
@@ -97,9 +67,6 @@ public class IRoadTrip {
 
         countryCodes = new HashMap<>();
         
-        //int numCountries = getNumCountries(args[0]);
-        //graph = new Graph(numCountries);
-        
         createBorderGraph(args[0]);
         setCountryCodes(args[2]);
         updateDistances(args[1]);
@@ -116,8 +83,12 @@ public class IRoadTrip {
         try (BufferedReader borders = new BufferedReader(new FileReader(borderFile))) {
             String line;
             while ((line = borders.readLine()) != null) {
-                line.split("=");
+                String[] part = line.split("=");
                 count++;
+                String[] border = part[1].trim().split(";");
+                for (int i = 0; i < border.length; i++) {
+                    count++;
+                }
 
             }
         } catch (IOException e) {
@@ -132,22 +103,25 @@ public class IRoadTrip {
             while ((line = borders.readLine()) != null) {
                 String[] part = line.split("=");
                 String country = part[0].trim(); 
-                System.out.println(country);
-        
+                
                 int source = addCountry(country);
+                System.out.println(country);
                 if(source == -1){
                     System.out.println("Country not found  " + country);
                 }
                 if(part.length > 1){
                     String[] border = part[1].trim().split(";");
-                for (String b : border) {
-                    int dest = addCountry(b.trim());
-                    if(dest == -1){
-                    System.out.println("Country not found  " + b.trim());
-                }
+                    for (String b : border) {
+                        String[] borderName = b.trim().split("\\s+(?=[0-9])", 2);
+                        String borderOne = borderName[0].trim();
+                        int dest = addCountry(borderOne);
+                        System.out.println("BORDER: " + borderOne);
+                        if(dest == -1){
+                        System.out.println("Country not found  " + borderOne.trim());
+                    }
                     addEdge(source, dest, 0);
+                    }
                 }
-            }
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Border file");
@@ -160,14 +134,45 @@ public class IRoadTrip {
             return index;
     }
 
+    private String standardCountryName(String input){
+        switch(input){
+            case "United States of America":
+                return "United States";
+
+            case "Bahamas":
+                return "Bahamas, The";
+
+            case "Surinam":
+                return "Suriname";
+
+            case "Germany (Prussia)":
+                return "Germany";
+            
+            case "German Federal Republic":
+                return "Germany";
+
+            case "German Democratic Republic":
+                return "Germany";
+
+            default:
+                return input;
+        }
+    }
+
     private void setCountryCodes(String stateNameFile){
+        
         try (BufferedReader stateName = new BufferedReader(new FileReader(stateNameFile))) {   
+            stateName.readLine();
             String line;
             while ((line = stateName.readLine()) != null) {
                 String[] columns = line.split("\t");
                 String countryCode = columns[1].trim();
                 String countryName = columns[2].trim();
-                countryCodes.put(countryName,countryCode);
+
+                countryName = standardCountryName(countryName);
+                countryCodes.put(countryCode, countryName);
+                System.out.println("THE NAME IS " + countryName);  
+                System.out.println("THE CODE IS " + countryCode);  
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the State Name file");
@@ -180,15 +185,23 @@ public class IRoadTrip {
             String line;
             while ((line = capDist.readLine()) != null) {
                 String[] part = line.split(",");
-                String countryOne = part[1].trim();
-                String countryTwo = part[3].trim();
-                double distance = Double.parseDouble(part[4].trim());
+                String countryOneInitial = part[1].trim();
+                String countryTwoInitial = part[3].trim();
 
-                    int nodeOne = countryInGraph.get(countryOne);
-                    int nodeTwo = countryInGraph.get(countryTwo);
+                countryOneInitial = countryCodes.get(countryOneInitial);
+                countryTwoInitial = countryCodes.get(countryTwoInitial);
+                if(countryOneInitial != null && countryTwoInitial != null){
+
+                System.out.println("THE COUNTRIES ARE " + countryOneInitial + " " + countryTwoInitial);
+                double distance = Double.parseDouble(part[4].trim());
+             
+                    int nodeOne = countryInGraph.get((countryOneInitial));
+                    int nodeTwo = countryInGraph.get((countryTwoInitial));
                     addEdge(nodeOne, nodeTwo, (int) distance);
                     addEdge(nodeTwo, nodeOne, (int) distance);
-                
+                }else{
+                    System.out.println("Country code is not found in countryCodes");
+                }
             }
         } catch (IOException e) {
             System.err.println("ERROR: cant read the Distance file");
@@ -214,7 +227,6 @@ public class IRoadTrip {
         while(!minHeap.isEmpty()){
             NodeCost current = minHeap.poll();
             int currVertex = current.node;
-            int currCost = current.cost;
             if(currVertex == dest){
                 return shortestDist[dest];
             }
